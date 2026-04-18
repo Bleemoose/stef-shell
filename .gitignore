@@ -1,0 +1,13 @@
+build/
+stef-shell
+*.o
+*.d
+.stef_history
+*.swp
+*.swo
+.vscode/
+.idea/
+.claude
+
+# Personal learning notes
+docs/notes/
