@@ -21,7 +21,12 @@ SOURCES  := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS  := $(SOURCES:$(SRC_DIR)/%.c=$(BUILD)/%.o)
 DEPS     := $(OBJECTS:.o=.d)
 
-.PHONY: all debug release run clean
+# Test binary links everything in src/ except main.o (tests supply their own main).
+TEST_SRC         := tests/test_lexer.c
+TEST_BIN         := $(BUILD)/test_lexer
+NON_MAIN_OBJECTS := $(filter-out $(BUILD)/main.o, $(OBJECTS))
+
+.PHONY: all debug release run test clean
 all: debug
 
 debug:   CFLAGS  := $(BASE) -O0 -g -fsanitize=address,undefined -fno-omit-frame-pointer
@@ -32,8 +37,17 @@ release: CFLAGS  := $(BASE) -O2 -DNDEBUG
 release: LDFLAGS :=
 release: $(BIN)
 
+# Tests always build with sanitizers; any memory error is a failure.
+test:    CFLAGS  := $(BASE) -O0 -g -fsanitize=address,undefined -fno-omit-frame-pointer
+test:    LDFLAGS := -fsanitize=address,undefined
+test:    $(TEST_BIN)
+	$(TEST_BIN)
+
 $(BIN): $(OBJECTS)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+
+$(TEST_BIN): $(TEST_SRC) $(NON_MAIN_OBJECTS) | $(BUILD)
+	$(CC) $(CFLAGS) $(TEST_SRC) $(NON_MAIN_OBJECTS) $(LDFLAGS) -o $@
 
 $(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
