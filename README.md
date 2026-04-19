@@ -5,8 +5,8 @@ A POSIX shell written from scratch in C11. Implements the primitives that make a
 ## Scope
 
 - [x] Interactive REPL with EOF handling
-- [ ] Tokenizer (words, single/double quotes, operators)
-- [ ] Parser producing a command/pipeline AST
+- [x] Tokenizer (words, single/double quotes, operators)
+- [x] Parser producing a command/pipeline AST
 - [ ] External command execution via `fork`/`execvp`/`waitpid`
 - [ ] Built-ins: `cd`, `exit`, `export`, `unset`, `pwd`, `env`
 - [ ] I/O redirection: `<`, `>`, `>>`, `2>`, `2>&1`

@@ -46,9 +46,18 @@ void str_buf_init(str_buf_t *b) {
 
 /* Ensure the buffer can hold `need` bytes total (including NUL). */
 static void str_buf_reserve(str_buf_t *b, size_t need) {
-	if (need <= b->cap) return;
-	size_t c = b->cap ? b->cap : STR_BUF_INIT_CAP;
-	while (c < need) c *= 2;
+	if (need <= b->cap) {
+		return;
+	}
+	size_t c;
+	if (b->cap == 0) {
+		c = STR_BUF_INIT_CAP;
+	} else {
+		c = b->cap;
+	}
+	while (c < need) {
+		c *= 2;
+	}
 	b->data = xrealloc(b->data, c);
 	b->cap = c;
 }

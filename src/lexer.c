@@ -59,7 +59,11 @@ void token_vec_free(token_vec_t *v) {
 
 static void token_vec_push(token_vec_t *v, tok_kind_t k, char *text) {
 	if (v->len == v->cap) {
-		v->cap = v->cap ? v->cap * 2 : TOK_VEC_INIT_CAP;
+		if (v->cap == 0) {
+			v->cap = TOK_VEC_INIT_CAP;
+		} else {
+			v->cap = v->cap * 2;
+		}
 		v->data = xrealloc(v->data, v->cap * sizeof(v->data[0]));
 	}
 	v->data[v->len].kind = k;

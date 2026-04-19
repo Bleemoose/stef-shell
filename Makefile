@@ -21,9 +21,11 @@ SOURCES  := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS  := $(SOURCES:$(SRC_DIR)/%.c=$(BUILD)/%.o)
 DEPS     := $(OBJECTS:.o=.d)
 
-# Test binary links everything in src/ except main.o (tests supply their own main).
-TEST_SRC         := tests/test_lexer.c
-TEST_BIN         := $(BUILD)/test_lexer
+# Test binaries: one per tests/test_*.c. Each links against every object in
+# src/ except main.o (each test file supplies its own main()). Adding a new
+# test is just `touch tests/test_foo.c` -- the wildcard picks it up.
+TEST_SRCS        := $(wildcard tests/test_*.c)
+TEST_BINS        := $(TEST_SRCS:tests/%.c=$(BUILD)/%)
 NON_MAIN_OBJECTS := $(filter-out $(BUILD)/main.o, $(OBJECTS))
 
 .PHONY: all debug release run test clean
@@ -40,14 +42,15 @@ release: $(BIN)
 # Tests always build with sanitizers; any memory error is a failure.
 test:    CFLAGS  := $(BASE) -O0 -g -fsanitize=address,undefined -fno-omit-frame-pointer
 test:    LDFLAGS := -fsanitize=address,undefined
-test:    $(TEST_BIN)
-	$(TEST_BIN)
+test:    $(TEST_BINS)
+	@for t in $(TEST_BINS); do echo "==> $$t"; $$t || exit 1; done
 
 $(BIN): $(OBJECTS)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 
-$(TEST_BIN): $(TEST_SRC) $(NON_MAIN_OBJECTS) | $(BUILD)
-	$(CC) $(CFLAGS) $(TEST_SRC) $(NON_MAIN_OBJECTS) $(LDFLAGS) -o $@
+# Pattern rule: build/test_foo from tests/test_foo.c + all non-main src objects.
+$(BUILD)/test_%: tests/test_%.c $(NON_MAIN_OBJECTS) | $(BUILD)
+	$(CC) $(CFLAGS) $< $(NON_MAIN_OBJECTS) $(LDFLAGS) -o $@
 
 $(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
