@@ -7,7 +7,7 @@ A POSIX shell written from scratch in C11. Implements the primitives that make a
 - [x] Interactive REPL with EOF handling
 - [x] Tokenizer (words, single/double quotes, operators)
 - [x] Parser producing a command/pipeline AST
-- [ ] External command execution via `fork`/`execvp`/`waitpid`
+- [x] External command execution via `fork`/`execvp`/`waitpid`
 - [ ] Built-ins: `cd`, `exit`, `export`, `unset`, `pwd`, `env`
 - [ ] I/O redirection: `<`, `>`, `>>`, `2>`, `2>&1`
 - [ ] N-stage pipelines (`cmd1 | cmd2 | cmd3`)
