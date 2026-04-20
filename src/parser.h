@@ -53,7 +53,7 @@ typedef struct {
 
 typedef struct {
 	command_t *commands;
-	size_t     n;
+	size_t     size;
 	int        background;   /* 1 iff the pipeline ended with '&' */
 } pipeline_t;
 
@@ -65,7 +65,7 @@ void pipeline_free(pipeline_t *p);
  * the result is success or failure.
  *
  * Returns 0 on success. For an empty input (tokens == [TOK_END]), *out is an
- * empty pipeline (n == 0) and the return is 0.
+ * empty pipeline (size == 0) and the return is 0.
  *
  * On parse error: prints a diagnostic to stderr, returns -1, and leaves *out
  * in a clean (freed, zeroed) state. Caller still owns the token_vec_t.

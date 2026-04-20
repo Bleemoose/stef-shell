@@ -36,8 +36,12 @@ static void command_push_arg(command_t *c, size_t *cap, char *word) {
 		}
 		c->argv = xrealloc(c->argv, *cap * sizeof(char *));
 	}
-	c->argv[c->argc++] = word;
-	c->argv[c->argc] = NULL;
+	//c->argv[c->argc++] = word;
+	//Apparently in C x++ will first execute the command with the old value the increase ++
+	c->argv[c->argc] = word;
+	c->argc++;
+	c->argv[c->argc] = NULL; 
+
 }
 
 static void command_push_redir(command_t *c, size_t *cap, redir_kind_t k, char *target) {
@@ -55,7 +59,7 @@ static void command_push_redir(command_t *c, size_t *cap, redir_kind_t k, char *
 }
 
 static void pipeline_push_command(pipeline_t *p, size_t *cap, command_t cmd) {
-	if (p->n == *cap) {
+	if (p->size == *cap) {
 		if (*cap == 0) {
 			*cap = CMD_INIT_CAP;
 		} else {
@@ -63,14 +67,14 @@ static void pipeline_push_command(pipeline_t *p, size_t *cap, command_t cmd) {
 		}
 		p->commands = xrealloc(p->commands, *cap * sizeof(command_t));
 	}
-	p->commands[p->n++] = cmd;
+	p->commands[p->size++] = cmd;
 }
 
 /* ---- lifecycle --------------------------------------------------------- */
 
 void pipeline_init(pipeline_t *p) {
 	p->commands = NULL;
-	p->n = 0;
+	p->size = 0;
 	p->background = 0;
 }
 
@@ -86,7 +90,7 @@ static void command_free(command_t *c) {
 }
 
 void pipeline_free(pipeline_t *p) {
-	for (size_t i = 0; i < p->n; i++) {
+	for (size_t i = 0; i < p->size; i++) {
 		command_free(&p->commands[i]);
 	}
 	free(p->commands);
@@ -106,12 +110,12 @@ const char *redir_kind_name(redir_kind_t k) {
 }
 
 void pipeline_print(FILE *f, const pipeline_t *p) {
-	if (p->n == 0) {
+	if (p->size == 0) {
 		fprintf(f, "pipeline (empty)\n");
 		return;
 	}
-	fprintf(f, "pipeline (background=%d, n=%zu):\n", p->background, p->n);
-	for (size_t i = 0; i < p->n; i++) {
+	fprintf(f, "pipeline (background=%d, size=%zu):\n", p->background, p->size);
+	for (size_t i = 0; i < p->size; i++) {
 		const command_t *c = &p->commands[i];
 		fprintf(f, "  command %zu:\n", i);
 
@@ -179,12 +183,12 @@ int parse(const token_vec_t *tokens, pipeline_t *out) {
 
 		for (;;) {
 			const token_t *tok = &tokens->data[i];
-			redir_kind_t rk;
+			redir_kind_t redir_kind;
 
 			if (tok->kind == TOK_WORD) {
 				command_push_arg(&cmd, &argv_cap, xstrdup(tok->text));
 				i++;
-			} else if (redir_kind_from_tok(tok->kind, &rk)) {
+			} else if (redir_kind_from_tok(tok->kind, &redir_kind)) {
 				i++;
 				const token_t *target = &tokens->data[i];
 				if (target->kind != TOK_WORD) {
@@ -193,7 +197,7 @@ int parse(const token_vec_t *tokens, pipeline_t *out) {
 					pipeline_free(out);
 					return -1;
 				}
-				command_push_redir(&cmd, &redir_cap, rk, xstrdup(target->text));
+				command_push_redir(&cmd, &redir_cap, redir_kind, xstrdup(target->text));
 				i++;
 			} else {
 				/* PIPE, AMP, END -- end of this command. */

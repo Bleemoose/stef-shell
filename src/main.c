@@ -1,16 +1,17 @@
 /*
  * stef-shell -- REPL driver.
  *
- * Read a line, lex it, parse it, and print the resulting pipeline AST.
- * Execution is not wired up yet (that's M3); until then the shell is an
- * interactive parser/lexer debugger. Lex or parse errors print a diagnostic
- * and the loop continues at the next prompt; only EOF exits.
+ * Read a line, lex it, parse it, execute it. Lex or parse errors print a
+ * diagnostic and the loop continues at the next prompt; executor errors
+ * (bad command, fork failure, etc.) are also non-fatal to the shell.
+ * Only EOF exits.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "executor.h"
 #include "lexer.h"
 #include "parser.h"
 
@@ -56,9 +57,10 @@ int main(void) {
 			continue;
 		}
 
-		/* No executor yet show the parse tree so the user can see
-		 * exactly what the shell understood.*/
-		pipeline_print(stdout, &pipe);
+		/* Execute. execute() prints its own diagnostics on failure; we
+		 * discard the exit status here (M4 adds a `status` builtin that
+		 * exposes it). */
+		(void)execute(&pipe);
 
 		pipeline_free(&pipe);
 		token_vec_free(&tokens);

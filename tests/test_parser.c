@@ -95,7 +95,7 @@ static void assert_argv(const command_t *cmd, const char *const *expected,
 static void empty_input(void) {
 	pipeline_t p;
 	do_parse_ok("", &p);
-	assert(p.n == 0);
+	assert(p.size == 0);
 	assert(p.background == 0);
 	assert(p.commands == NULL);
 	pipeline_free(&p);
@@ -104,14 +104,14 @@ static void empty_input(void) {
 static void whitespace_only(void) {
 	pipeline_t p;
 	do_parse_ok("   \t  ", &p);
-	assert(p.n == 0);
+	assert(p.size == 0);
 	pipeline_free(&p);
 }
 
 static void single_command(void) {
 	pipeline_t p;
 	do_parse_ok("ls", &p);
-	assert(p.n == 1);
+	assert(p.size == 1);
 	assert(p.background == 0);
 	assert_argv(&p.commands[0], (const char *[]){"ls", NULL}, "ls", 0);
 	assert(p.commands[0].n_redirs == 0);
@@ -121,7 +121,7 @@ static void single_command(void) {
 static void command_with_args(void) {
 	pipeline_t p;
 	do_parse_ok("echo hi there", &p);
-	assert(p.n == 1);
+	assert(p.size == 1);
 	assert_argv(&p.commands[0],
 	            (const char *[]){"echo", "hi", "there", NULL},
 	            "echo hi there", 0);
@@ -131,7 +131,7 @@ static void command_with_args(void) {
 static void two_stage_pipe(void) {
 	pipeline_t p;
 	do_parse_ok("ls | wc", &p);
-	assert(p.n == 2);
+	assert(p.size == 2);
 	assert(p.background == 0);
 	assert_argv(&p.commands[0], (const char *[]){"ls", NULL}, "ls|wc", 0);
 	assert_argv(&p.commands[1], (const char *[]){"wc", NULL}, "ls|wc", 1);
@@ -141,7 +141,7 @@ static void two_stage_pipe(void) {
 static void three_stage_pipe(void) {
 	pipeline_t p;
 	do_parse_ok("ls -la | grep foo | wc -l", &p);
-	assert(p.n == 3);
+	assert(p.size == 3);
 	assert_argv(&p.commands[0], (const char *[]){"ls", "-la", NULL}, "3-stage", 0);
 	assert_argv(&p.commands[1], (const char *[]){"grep", "foo", NULL}, "3-stage", 1);
 	assert_argv(&p.commands[2], (const char *[]){"wc", "-l", NULL}, "3-stage", 2);
@@ -151,7 +151,7 @@ static void three_stage_pipe(void) {
 static void background(void) {
 	pipeline_t p;
 	do_parse_ok("sleep 10 &", &p);
-	assert(p.n == 1);
+	assert(p.size == 1);
 	assert(p.background == 1);
 	assert_argv(&p.commands[0], (const char *[]){"sleep", "10", NULL}, "sleep 10 &", 0);
 	pipeline_free(&p);
@@ -160,7 +160,7 @@ static void background(void) {
 static void background_pipeline(void) {
 	pipeline_t p;
 	do_parse_ok("yes | head &", &p);
-	assert(p.n == 2);
+	assert(p.size == 2);
 	assert(p.background == 1);
 	pipeline_free(&p);
 }
@@ -168,7 +168,7 @@ static void background_pipeline(void) {
 static void redirect_out(void) {
 	pipeline_t p;
 	do_parse_ok("echo hi > out.txt", &p);
-	assert(p.n == 1);
+	assert(p.size == 1);
 	assert_argv(&p.commands[0], (const char *[]){"echo", "hi", NULL}, "> out", 0);
 	assert(p.commands[0].n_redirs == 1);
 	assert(p.commands[0].redirs[0].kind == R_OUT);
@@ -208,7 +208,7 @@ static void redirect_in_middle(void) {
 	 * them once, regardless of where they appeared. */
 	pipeline_t p;
 	do_parse_ok("echo > out hi", &p);
-	assert(p.n == 1);
+	assert(p.size == 1);
 	assert_argv(&p.commands[0], (const char *[]){"echo", "hi", NULL}, "echo > out hi", 0);
 	assert(p.commands[0].n_redirs == 1);
 	assert(p.commands[0].redirs[0].kind == R_OUT);
@@ -232,7 +232,7 @@ static void multiple_redirects(void) {
 static void pipe_with_redirects(void) {
 	pipeline_t p;
 	do_parse_ok("grep foo < in | wc -l > out", &p);
-	assert(p.n == 2);
+	assert(p.size == 2);
 	assert(p.commands[0].n_redirs == 1);
 	assert(p.commands[0].redirs[0].kind == R_IN);
 	assert(p.commands[1].n_redirs == 1);
@@ -244,7 +244,7 @@ static void pipe_with_redirects(void) {
 static void quoted_words_survive(void) {
 	pipeline_t p;
 	do_parse_ok("echo \"hi there\" | grep 'foo bar'", &p);
-	assert(p.n == 2);
+	assert(p.size == 2);
 	assert_argv(&p.commands[0], (const char *[]){"echo", "hi there", NULL}, "quoted", 0);
 	assert_argv(&p.commands[1], (const char *[]){"grep", "foo bar", NULL}, "quoted", 1);
 	pipeline_free(&p);
