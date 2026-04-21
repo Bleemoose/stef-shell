@@ -70,7 +70,7 @@ void str_buf_push(str_buf_t *b, char c) {
 }
 
 char *str_buf_take(str_buf_t *b) {
-	/* Empty string is still a valid result -- allocate if needed. */
+	/* An empty string is still a valid result; allocate if we never pushed. */
 	if (!b->data) {
 		b->data = xmalloc(1);
 		b->data[0] = '\0';

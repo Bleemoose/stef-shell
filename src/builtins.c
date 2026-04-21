@@ -10,7 +10,7 @@
  *
  * Registration is data-driven: the `builtins[]` table is the single source
  * of truth for names, function pointers, and `help` summaries. Adding a
- * builtin means adding a row -- no changes to dispatch or help.
+ * builtin is one new row; dispatch and help pick it up automatically.
  */
 
 #include "builtins.h"
@@ -73,6 +73,18 @@ int builtin_try(const command_t *c, int *status_out) {
 	return 0;
 }
 
+int builtin_is(const char *name) {
+	if (!name) {
+		return 0;
+	}
+	for (size_t i = 0; i < N_BUILTINS; i++) {
+		if (strcmp(name, builtins[i].name) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /* ---- exit -------------------------------------------------------------- */
 
 static int builtin_exit(int argc, char **argv) {
@@ -123,7 +135,7 @@ static int builtin_cd(int argc, char **argv) {
 		}
 		echo_target = 1;
 	} else if (argv[1][0] == '~') {
-		/* Only ~ and ~/... -- no ~user. Splice $HOME in for the '~'. */
+		/* Handle ~ and ~/... (no ~user form). Splice $HOME in for the '~'. */
 		const char *home = getenv("HOME");
 		if (!home) {
 			fprintf(stderr, "stef-shell: cd: HOME not set\n");

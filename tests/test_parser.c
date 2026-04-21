@@ -61,7 +61,7 @@ static void expect_parse_err(const char *input) {
 		token_vec_free(&v);
 		abort();
 	}
-	/* On error, parse() leaves *out cleanly freed -- nothing to free here. */
+	/* On error, parse() leaves *out cleanly freed; nothing to free here. */
 	token_vec_free(&v);
 }
 
@@ -204,7 +204,7 @@ static void redirect_stderr(void) {
 }
 
 static void redirect_in_middle(void) {
-	/* POSIX allows redirects anywhere in the command -- the executor uses
+	/* POSIX allows redirects anywhere in the command. The executor uses
 	 * them once, regardless of where they appeared. */
 	pipeline_t p;
 	do_parse_ok("echo > out hi", &p);

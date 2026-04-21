@@ -1,11 +1,8 @@
 /*
- * Parser -- straight-line recursive descent over the token stream.
- *
- * Single pass, single index `i`. The outer loop parses commands separated by
- * PIPE; a trailing AMP flips `background`; END terminates. An inner loop
- * consumes WORDs and redirects in any order, matching POSIX where
- * `echo > out hi` is a legal way to say "run echo with arg 'hi', stdout to
- * 'out'".
+ * Straight-line recursive descent over the token stream. Single pass,
+ * single index `i`. Outer loop parses commands separated by PIPE, a
+ * trailing AMP flips `background`, END terminates. Inner loop consumes
+ * WORDs and redirects in any order (POSIX allows e.g. `echo > out hi`).
  *
  * Every WORD is xstrdup'd into the AST, so the caller can free the
  * token_vec_t immediately after parse() returns.
@@ -162,8 +159,8 @@ static int redir_kind_from_tok(tok_kind_t k, redir_kind_t *out) {
 int parse(const token_vec_t *tokens, pipeline_t *out) {
 	pipeline_init(out);
 
-	/* Defensive: the lexer guarantees a TOK_END terminator, but if a caller
-	 * hands us an empty vec treat it as empty input. */
+	/* The lexer guarantees a TOK_END terminator. Handle the empty-vec case
+	 * anyway in case a caller skips calling lex(). */
 	if (tokens->len == 0 || tokens->data[0].kind == TOK_END) {
 		return 0;
 	}
@@ -200,7 +197,7 @@ int parse(const token_vec_t *tokens, pipeline_t *out) {
 				command_push_redir(&cmd, &redir_cap, redir_kind, xstrdup(target->text));
 				i++;
 			} else {
-				/* PIPE, AMP, END -- end of this command. */
+				/* PIPE, AMP, END: end of this command. */
 				break;
 			}
 		}

@@ -1,5 +1,5 @@
 /*
- * Lexer -- state machine over a NUL-terminated input line.
+ * Tokenizer. State machine over a NUL-terminated input line.
  *
  * State transitions (summary):
  *

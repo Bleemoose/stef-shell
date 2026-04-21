@@ -9,9 +9,9 @@
  * That way repeat runs stay deterministic and this test leaves no visible
  * trail in whatever process launched it (make, CI, the user's shell).
  *
- * `exit` is deliberately not tested here -- the success path calls exit()
- * for real, which would kill the test runner. We trust the numeric-parse
- * branch by inspection and cover interactive behavior in the manual demo.
+ * `exit` is not tested here: its success path calls exit() for real and
+ * would kill the test runner. The numeric-parse branch is trusted by
+ * inspection; interactive behavior is covered by the manual demo.
  */
 
 #include <assert.h>

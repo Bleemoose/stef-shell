@@ -23,7 +23,7 @@ DEPS     := $(OBJECTS:.o=.d)
 
 # Test binaries: one per tests/test_*.c. Each links against every object in
 # src/ except main.o (each test file supplies its own main()). Adding a new
-# test is just `touch tests/test_foo.c` -- the wildcard picks it up.
+# test is just `touch tests/test_foo.c`; the wildcard picks it up.
 TEST_SRCS        := $(wildcard tests/test_*.c)
 TEST_BINS        := $(TEST_SRCS:tests/%.c=$(BUILD)/%)
 NON_MAIN_OBJECTS := $(filter-out $(BUILD)/main.o, $(OBJECTS))

@@ -16,17 +16,18 @@
  * reported to stderr and surfaced as status 1. Never aborts; the REPL always
  * gets control back.
  *
- * Scope: one single-command, foreground, no-redirect pipeline. Pipelines,
- * background, and redirects are rejected with a diagnostic. Each will be
- * implemented in its own milestone (M5 redirects, M6 pipes, M8 job control).
+ * Scope: one single-command, foreground pipeline with I/O redirection
+ * (<, >, >>, 2>) applied to either an external command or a builtin.
+ * Pipelines (`|`) and background (`&`) are rejected with a diagnostic and
+ * surface as status 1 until their milestones land (M6 pipes, M8 job control).
  */
 int execute(const pipeline_t *p);
 
 /*
  * Last exit status returned by execute(). Zero at shell startup; updated on
  * every execute() call (including NYI rejections, fork failures, and builtin
- * returns). Exposed so the `status` builtin can print it -- the M4 stand-in
- * for $? until variable expansion arrives.
+ * returns). The `status` builtin reads this (stand-in for $? until variable
+ * expansion lands).
  */
 int executor_last_status(void);
 

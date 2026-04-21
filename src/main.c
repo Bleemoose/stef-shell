@@ -1,11 +1,5 @@
-/*
- * stef-shell -- REPL driver.
- *
- * Read a line, lex it, parse it, execute it. Lex or parse errors print a
- * diagnostic and the loop continues at the next prompt; executor errors
- * (bad command, fork failure, etc.) are also non-fatal to the shell.
- * Only EOF exits.
- */
+/* REPL: read a line, lex, parse, execute. Only EOF exits; every other
+ * error is reported and the prompt returns. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +26,7 @@ int main(void) {
 			break;
 		}
 
-		/* fgets keeps the trailing '\n' -- strip it. */
+		/* fgets keeps the trailing newline; strip it. */
 		size_t n = strlen(buf);
 		if (n > 0 && buf[n - 1] == '\n') {
 			buf[--n] = '\0';
