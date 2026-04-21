@@ -22,4 +22,12 @@
  */
 int execute(const pipeline_t *p);
 
+/*
+ * Last exit status returned by execute(). Zero at shell startup; updated on
+ * every execute() call (including NYI rejections, fork failures, and builtin
+ * returns). Exposed so the `status` builtin can print it -- the M4 stand-in
+ * for $? until variable expansion arrives.
+ */
+int executor_last_status(void);
+
 #endif /* STEF_EXECUTOR_H */

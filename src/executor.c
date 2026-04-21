@@ -14,12 +14,23 @@
 
 #include "executor.h"
 
+#include "builtins.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+/* Updated on every return from execute(). The `status` builtin reads this
+ * through executor_last_status(). Module-local so no other code can mutate
+ * it behind our back. */
+static int last_status = 0;
+
+int executor_last_status(void) {
+	return last_status;
+}
 
 static void nyi(const char *feature) {
 	fprintf(stderr, "stef-shell: %s not implemented yet\n", feature);
@@ -79,31 +90,36 @@ static int wait_for(pid_t pid) {
 
 int execute(const pipeline_t *p) {
 	if (p->size == 0) {
-		return 0;
+		return last_status = 0;
 	}
 	if (p->size > 1) {
 		nyi("pipelines");
-		return 1;
+		return last_status = 1;
 	}
 	if (p->background) {
 		nyi("background execution");
-		return 1;
+		return last_status = 1;
 	}
 
 	const command_t *c = &p->commands[0];
 	if (c->n_redirs > 0) {
 		nyi("redirections");
-		return 1;
+		return last_status = 1;
+	}
+
+	int builtin_status;
+	if (builtin_try(c, &builtin_status)) {
+		return last_status = builtin_status;   /* ran in-shell, no fork */
 	}
 
 	pid_t pid = fork();
 	if (pid < 0) {
 		perror("stef-shell: fork");
-		return 1;
+		return last_status = 1;
 	}
 	if (pid == 0) {
 		child_exec(c);   /* _Noreturn */
 	}
 
-	return wait_for(pid);
+	return last_status = wait_for(pid);
 }
