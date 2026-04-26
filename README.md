@@ -11,7 +11,7 @@ No dependency on `readline`, `libedit`, or any other shell runtime. Covers proce
 - [x] External command execution via `fork`/`execvp`/`waitpid`
 - [x] Built-ins: `cd`, `exit`, `export`, `unset`, `pwd`, `env`
 - [x] I/O redirection: `<`, `>`, `>>`, `2>`
-- [ ] N-stage pipelines (`cmd1 | cmd2 | cmd3`)
+- [x] N-stage pipelines (`cmd1 | cmd2 | cmd3`)
 - [ ] Signal handling: `SIGINT`, `SIGQUIT`, `SIGCHLD`
 - [ ] Job control: `&`, `fg`, `bg`, `jobs`, `Ctrl-Z`
 - [ ] Raw-mode line editor via `termios`: arrow keys, history, tab completion

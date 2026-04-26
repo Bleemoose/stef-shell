@@ -16,10 +16,12 @@
  * reported to stderr and surfaced as status 1. Never aborts; the REPL always
  * gets control back.
  *
- * Scope: one single-command, foreground pipeline with I/O redirection
- * (<, >, >>, 2>) applied to either an external command or a builtin.
- * Pipelines (`|`) and background (`&`) are rejected with a diagnostic and
- * surface as status 1 until their milestones land (M6 pipes, M8 job control).
+ * Scope: foreground pipelines of one or more stages with I/O redirection
+ * (<, >, >>, 2>) applied per stage. Built-ins in a single-command pipeline
+ * run in-shell (they have to, for cd/export/exit to stick); built-ins in a
+ * multi-stage pipeline run in a forked child and their state mutations are
+ * discarded on exit (matches bash). Background (`&`) is still rejected with
+ * a diagnostic and surfaces as status 1 until M8 (job control).
  */
 int execute(const pipeline_t *p);
 

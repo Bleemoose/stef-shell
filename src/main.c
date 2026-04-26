@@ -1,6 +1,7 @@
 /* REPL: read a line, lex, parse, execute. Only EOF exits; every other
  * error is reported and the prompt returns. */
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,14 @@
 
 int main(void) {
 	char buf[LINE_BUF_SIZE];
+
+	/* Ignore SIGINT and SIGQUIT in the shell itself so Ctrl-C / Ctrl-\ at
+	 * the prompt or during a running pipeline hits the children, not us.
+	 * Each forked child resets both to SIG_DFL before exec / before calling
+	 * a builtin (POSIX preserves SIG_IGN across execve, so the reset is
+	 * mandatory or piped `sleep` would refuse to die). */
+	signal(SIGINT,  SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
 
 	for (;;) {
 		fputs(PROMPT, stdout);

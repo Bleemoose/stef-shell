@@ -145,10 +145,6 @@ static void whitespace_only_returns_0(void) {
 	assert(run("   \t  ") == 0);
 }
 
-static void pipelines_rejected(void) {
-	assert(run_silent("ls | wc") == 1);
-}
-
 static void background_rejected(void) {
 	assert(run_silent("sleep 0 &") == 1);
 }
@@ -296,6 +292,123 @@ static void append_mode_creates(void) {
 	rm(out);
 }
 
+/* --- pipelines (M6) ---------------------------------------------------- */
+
+static void two_stage_pipe(void) {
+	const char *out = TMP_PREFIX "p2";
+	rm(out);
+
+	assert(run("echo hi | cat > " TMP_PREFIX "p2") == 0);
+
+	char *s = slurp(out);
+	assert(s != NULL);
+	assert(strcmp(s, "hi\n") == 0);
+	free(s);
+	rm(out);
+}
+
+static void three_stage_pipe(void) {
+	const char *out = TMP_PREFIX "p3";
+	rm(out);
+
+	assert(run("echo hi | tr h H | cat > " TMP_PREFIX "p3") == 0);
+
+	char *s = slurp(out);
+	assert(s != NULL);
+	assert(strcmp(s, "Hi\n") == 0);
+	free(s);
+	rm(out);
+}
+
+static void pipeline_exit_is_last(void) {
+	/* Last stage wins; no pipefail. */
+	assert(run("/bin/false | /bin/true") == 0);
+	assert(run("/bin/true | /bin/false") == 1);
+}
+
+static void pipeline_with_redirect_on_first(void) {
+	const char *in  = TMP_PREFIX "pin";
+	const char *out = TMP_PREFIX "pout";
+	rm(in);
+	rm(out);
+
+	seed(in, "abc\n");
+	/* First stage reads from a file, last stage writes to one. The pipe
+	 * in the middle ties cat's stdout to tr's stdin. */
+	assert(run("cat < " TMP_PREFIX "pin | tr a-z A-Z > " TMP_PREFIX "pout") == 0);
+
+	char *s = slurp(out);
+	assert(s != NULL);
+	assert(strcmp(s, "ABC\n") == 0);
+	free(s);
+	rm(in);
+	rm(out);
+}
+
+static void pipeline_builtin_stage(void) {
+	/* pwd in a pipeline runs in a forked child. Its output must still
+	 * reach the next stage via the pipe. */
+	const char *out = TMP_PREFIX "pbuiltin";
+	rm(out);
+
+	assert(run("pwd | cat > " TMP_PREFIX "pbuiltin") == 0);
+
+	char cwd[4096];
+	assert(getcwd(cwd, sizeof cwd) != NULL);
+	char *s = slurp(out);
+	assert(s != NULL);
+	size_t cwd_len = strlen(cwd);
+	assert(strncmp(s, cwd, cwd_len) == 0);
+	assert(s[cwd_len] == '\n');
+	assert(s[cwd_len + 1] == '\0');
+	free(s);
+
+	rm(out);
+}
+
+static void pipeline_first_not_found(void) {
+	/* First stage execvp fails with ENOENT -> _exit(127). Its error is
+	 * written to stderr (silenced here) and the write end of the pipe
+	 * closes, so cat sees immediate EOF and exits 0. The pipeline's
+	 * status is cat's (the last stage), which is 0. The real value of
+	 * this test is that it doesn't hang: dangling pipe fds in the
+	 * parent would keep cat blocked forever on its read(). */
+	assert(run_silent("nonexistent-cmd-xyz-42 | cat") == 0);
+}
+
+static void pipeline_sigpipe_clean(void) {
+	/* `yes` prints forever; `head -n 3` reads three lines and closes
+	 * stdin. yes's next write() hits a pipe with no reader and the
+	 * kernel raises SIGPIPE, which has its default disposition
+	 * (terminate). head exits 0 as the last stage, so the pipeline
+	 * status is 0. The test mainly proves the shell doesn't hang. */
+	const char *out = TMP_PREFIX "psigp";
+	rm(out);
+
+	assert(run("yes | head -n 3 > " TMP_PREFIX "psigp") == 0);
+
+	char *s = slurp(out);
+	assert(s != NULL);
+	assert(strcmp(s, "y\ny\ny\n") == 0);
+	free(s);
+	rm(out);
+}
+
+static void pipeline_four_stages(void) {
+	/* N=4: tokenize `a b c` into one-per-line, reverse-sort, take top 2. */
+	const char *out = TMP_PREFIX "p4";
+	rm(out);
+
+	assert(run("echo a b c | tr ' ' '\\n' | sort -r | head -n 2 > "
+	           TMP_PREFIX "p4") == 0);
+
+	char *s = slurp(out);
+	assert(s != NULL);
+	assert(strcmp(s, "c\nb\n") == 0);
+	free(s);
+	rm(out);
+}
+
 /* --- runner ------------------------------------------------------------- */
 
 #define RUN(name) do { printf("  %s\n", #name); name(); } while (0)
@@ -309,7 +422,6 @@ int main(void) {
 	RUN(absolute_path_not_found_returns_127);
 	RUN(empty_pipeline_returns_0);
 	RUN(whitespace_only_returns_0);
-	RUN(pipelines_rejected);
 	RUN(background_rejected);
 
 	RUN(stdout_redirect_truncate);
@@ -320,6 +432,15 @@ int main(void) {
 	RUN(builtin_redirect_pwd);
 	RUN(multiple_redirects);
 	RUN(append_mode_creates);
+
+	RUN(two_stage_pipe);
+	RUN(three_stage_pipe);
+	RUN(pipeline_exit_is_last);
+	RUN(pipeline_with_redirect_on_first);
+	RUN(pipeline_builtin_stage);
+	RUN(pipeline_first_not_found);
+	RUN(pipeline_sigpipe_clean);
+	RUN(pipeline_four_stages);
 
 	printf("all tests passed\n");
 	return 0;
